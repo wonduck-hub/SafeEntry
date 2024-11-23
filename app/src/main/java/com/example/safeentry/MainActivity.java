@@ -2,6 +2,8 @@ package com.example.safeentry;
 
 import android.os.Bundle;
 
+import android.widget.ArrayAdapter;
+import android.widget.Spinner;
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
@@ -20,5 +22,13 @@ public class MainActivity extends AppCompatActivity {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
+
+        Spinner stateSpinner = findViewById(R.id.state_spinner);
+
+        String[] items = {"일반", "응급"};
+        ArrayAdapter<String> spinnerItems = new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item, items);
+        stateSpinner.setAdapter(spinnerItems);
     }
+
+
 }
