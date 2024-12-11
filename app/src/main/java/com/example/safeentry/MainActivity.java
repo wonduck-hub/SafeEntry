@@ -3,15 +3,21 @@ package com.example.safeentry;
 import android.os.Bundle;
 
 import android.view.View;
-import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
-import android.widget.Spinner;
-import android.widget.Toast;
+import android.widget.*;
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
+
+import java.io.UnsupportedEncodingException;
+import java.util.EventListener;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.net.URLEncoder;
+import java.io.BufferedReader;
+import java.io.IOException;
 
 public class MainActivity extends AppCompatActivity {
     public enum Region {
@@ -117,7 +123,9 @@ public class MainActivity extends AppCompatActivity {
         citySpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                handleCitySelection(position);
+                String selectedCity = cities[position];
+                System.out.println("선택된 시도: " + selectedCity);
+                updateDistricts(selectedCity);
             }
 
             @Override
@@ -125,14 +133,80 @@ public class MainActivity extends AppCompatActivity {
                 // 아무것도 선택되지 않았을 때
             }
         });
-    }
 
-    private void handleCitySelection(int position) {
-        String selectedCity = cities[position];
-        System.out.println("선택된 시도: " + selectedCity);
-        updateDistricts(selectedCity);
-    }
+        Button sendBtn = findViewById(R.id.sendButton);
 
+        sendBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            String apiKey = System.getenv("API_KEY");
+                            StringBuilder urlBuilder = new StringBuilder("https://apis.data.go.kr/B552657/ErmctInfoInqireService/getEmrrmRltmUsefulSckbdInfoInqire");
+                            urlBuilder.append("?" + URLEncoder.encode("serviceKey", "UTF-8") + "=" + apiKey); /*Service Key*/
+                            urlBuilder.append("&" + URLEncoder.encode("STAGE1", "UTF-8") + "=" + URLEncoder.encode("서울특별시", "UTF-8")); /*주소(시도)*/
+                            urlBuilder.append("&" + URLEncoder.encode("STAGE2", "UTF-8") + "=" + URLEncoder.encode("강남구", "UTF-8")); /*주소(시군구)*/
+                            urlBuilder.append("&" + URLEncoder.encode("pageNo", "UTF-8") + "=" + URLEncoder.encode("1", "UTF-8")); /*페이지 번호*/
+                            urlBuilder.append("&" + URLEncoder.encode("numOfRows", "UTF-8") + "=" + URLEncoder.encode("10", "UTF-8")); /*목록 건수*/
+
+                            URL url = new URL(urlBuilder.toString());
+                            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+                            conn.setRequestMethod("GET");
+                            conn.setRequestProperty("Content-type", "application/json");
+                            int responseCode = conn.getResponseCode();
+
+                            runOnUiThread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    Toast.makeText(MainActivity.this, "Response code: " + responseCode, Toast.LENGTH_SHORT).show();
+                                }
+                            });
+
+                            BufferedReader rd;
+                            if (responseCode >= 200 && responseCode <= 300) {
+                                rd = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+                            } else {
+                                rd = new BufferedReader(new InputStreamReader(conn.getErrorStream()));
+                            }
+                            StringBuilder sb = new StringBuilder();
+                            String line;
+                            while ((line = rd.readLine()) != null) {
+                                sb.append(line);
+                            }
+                            rd.close();
+                            conn.disconnect();
+
+                            runOnUiThread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    System.out.println(sb.toString()); // UI 스레드에서 로그 출력
+                                }
+                            });
+
+                        } catch (UnsupportedEncodingException e) {
+                            e.printStackTrace();
+                            runOnUiThread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    Toast.makeText(MainActivity.this, "Unsupported Encoding: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                                }
+                            });
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                            runOnUiThread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    Toast.makeText(MainActivity.this, "IO Exception: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                                }
+                            });
+                        }
+                    }
+                }).start();
+            }
+        });
+    }
 
     private void updateDistricts(String city) {
 
