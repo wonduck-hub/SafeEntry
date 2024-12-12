@@ -19,6 +19,8 @@ import java.net.URLEncoder;
 import java.io.BufferedReader;
 import java.io.IOException;
 
+import io.github.cdimascio.dotenv.Dotenv;
+
 public class MainActivity extends AppCompatActivity {
     public enum Region {
         // 서울특별시
@@ -98,6 +100,8 @@ public class MainActivity extends AppCompatActivity {
 
     String[] districts = null;
 
+    String apiKey;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -108,6 +112,12 @@ public class MainActivity extends AppCompatActivity {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
+
+        apiKey = BuildConfig.API_KEY;
+
+        if (apiKey == null) {
+            System.err.println("API_KEY 환경 변수가 설정되지 않았습니다.\n" + apiKey);
+        }
 
         citySpinner = findViewById(R.id.city_spinner);
         districtSpinner = findViewById(R.id.district_spinner);
@@ -143,11 +153,10 @@ public class MainActivity extends AppCompatActivity {
                     @Override
                     public void run() {
                         try {
-                            String apiKey = System.getenv("API_KEY");
                             StringBuilder urlBuilder = new StringBuilder("https://apis.data.go.kr/B552657/ErmctInfoInqireService/getEmrrmRltmUsefulSckbdInfoInqire");
                             urlBuilder.append("?" + URLEncoder.encode("serviceKey", "UTF-8") + "=" + apiKey); /*Service Key*/
-                            urlBuilder.append("&" + URLEncoder.encode("STAGE1", "UTF-8") + "=" + URLEncoder.encode("서울특별시", "UTF-8")); /*주소(시도)*/
-                            urlBuilder.append("&" + URLEncoder.encode("STAGE2", "UTF-8") + "=" + URLEncoder.encode("강남구", "UTF-8")); /*주소(시군구)*/
+                            urlBuilder.append("&" + URLEncoder.encode("STAGE1", "UTF-8") + "=" + URLEncoder.encode(citySpinner.getSelectedItem().toString(), "UTF-8")); /*주소(시도)*/
+                            urlBuilder.append("&" + URLEncoder.encode("STAGE2", "UTF-8") + "=" + URLEncoder.encode(districtSpinner.getSelectedItem().toString(), "UTF-8")); /*주소(시군구)*/
                             urlBuilder.append("&" + URLEncoder.encode("pageNo", "UTF-8") + "=" + URLEncoder.encode("1", "UTF-8")); /*페이지 번호*/
                             urlBuilder.append("&" + URLEncoder.encode("numOfRows", "UTF-8") + "=" + URLEncoder.encode("10", "UTF-8")); /*목록 건수*/
 
@@ -156,13 +165,6 @@ public class MainActivity extends AppCompatActivity {
                             conn.setRequestMethod("GET");
                             conn.setRequestProperty("Content-type", "application/json");
                             int responseCode = conn.getResponseCode();
-
-                            runOnUiThread(new Runnable() {
-                                @Override
-                                public void run() {
-                                    Toast.makeText(MainActivity.this, "Response code: " + responseCode, Toast.LENGTH_SHORT).show();
-                                }
-                            });
 
                             BufferedReader rd;
                             if (responseCode >= 200 && responseCode <= 300) {
@@ -181,7 +183,9 @@ public class MainActivity extends AppCompatActivity {
                             runOnUiThread(new Runnable() {
                                 @Override
                                 public void run() {
+                                    System.out.println(apiKey);
                                     System.out.println(sb.toString()); // UI 스레드에서 로그 출력
+                                    Toast.makeText(MainActivity.this, sb.toString(), Toast.LENGTH_SHORT).show();
                                 }
                             });
 
