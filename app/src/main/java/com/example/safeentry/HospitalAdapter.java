@@ -27,8 +27,13 @@ public class HospitalAdapter extends ArrayAdapter<Hospital> {
         TextView textViewEmergencyRoomCount = convertView.findViewById(R.id.textViewEmergencyRoomCount);
 
         textViewName.setText(hospital.getName());
-        textViewTelNum.setText(hospital.getTelNum());
-        textViewEmergencyRoomCount.setText(String.valueOf(hospital.getEmergencyRoomCount()));
+        textViewTelNum.setText("전화 번호: " + hospital.getTelNum());
+        if (hospital.getEmergencyRoomCount() > 0) {
+            textViewEmergencyRoomCount.setText("응급실 자리: " + String.valueOf(hospital.getEmergencyRoomCount()));
+        }
+        else {
+            textViewEmergencyRoomCount.setText("응급실 자리: 없음");
+        }
 
         return convertView;
     }

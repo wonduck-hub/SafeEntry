@@ -1,40 +1,44 @@
 package com.example.safeentry;
 
 import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.net.Uri;
 import android.os.Bundle;
 
+import android.view.View;
+import android.widget.AdapterView;
 import android.widget.ListView;
 import android.widget.Toast;
 import androidx.activity.EdgeToEdge;
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
 import java.io.*;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.net.URLEncoder;
-import java.util.HashMap;
 import java.util.List;
 import java.util.ArrayList;
 
-import androidx.recyclerview.widget.RecyclerView;
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 import org.xmlpull.v1.XmlPullParserFactory;
 
-import javax.net.ssl.HostnameVerifier;
+import android.Manifest;
 
 public class DataActivity extends AppCompatActivity {
 
-    String cityName;
-    String districtName;
-    String apiKey;
+    private static final int REQUEST_CALL_PERMISSION = 1;
 
-    String xmlDataString;
+    private String cityName;
+    private String districtName;
+    private String apiKey;
 
-    List<Hospital> hospitals = new ArrayList<Hospital>(100);
+    private String xmlDataString;
+
+    private List<Hospital> hospitals = new ArrayList<Hospital>(100);
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -90,5 +94,45 @@ public class DataActivity extends AppCompatActivity {
 
         HospitalAdapter adapter = new HospitalAdapter(this, hospitals);
         listView.setAdapter(adapter);
+
+        listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                Hospital selectedHospital = (Hospital) parent.getItemAtPosition(position);
+                String phoneNumber = selectedHospital.getTelNum();
+
+                if (ContextCompat.checkSelfPermission(DataActivity.this, Manifest.permission.CALL_PHONE)
+                        != PackageManager.PERMISSION_GRANTED) {
+                    ActivityCompat.requestPermissions(DataActivity.this,
+                            new String[]{Manifest.permission.CALL_PHONE}, REQUEST_CALL_PERMISSION);
+                } else {
+                    makePhoneCall(phoneNumber);
+                }
+            }
+
+        });
+    }
+
+    private void makePhoneCall(String phoneNumber) {
+        Intent callIntent = new Intent(Intent.ACTION_CALL);
+        callIntent.setData(Uri.parse("tel:" + phoneNumber));
+        try {
+            startActivity(callIntent);
+        } catch (SecurityException e) {
+            Toast.makeText(this, "전화 걸기 권한이 필요합니다.", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults); // super 호출 추가
+
+        if (requestCode == REQUEST_CALL_PERMISSION) {
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+
+            } else {
+                Toast.makeText(this, "전화 걸기 권한이 필요합니다.", Toast.LENGTH_SHORT).show();
+            }
+        }
     }
 }
