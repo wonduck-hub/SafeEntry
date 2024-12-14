@@ -189,15 +189,6 @@ public class MainActivity extends AppCompatActivity {
                             rd.close();
                             conn.disconnect();
 
-                            runOnUiThread(new Runnable() {
-                                @Override
-                                public void run() {
-                                    System.out.println(apiKey);
-                                    System.out.println(sb.toString()); // UI 스레드에서 로그 출력
-                                    Toast.makeText(MainActivity.this, sb.toString(), Toast.LENGTH_SHORT).show();
-                                }
-                            });
-
                             Intent intent = new Intent(getApplicationContext(), DataActivity.class);
                             intent.putExtra("city", citySpinner.getSelectedItem().toString());
                             intent.putExtra("district", districtSpinner.getSelectedItem().toString());
