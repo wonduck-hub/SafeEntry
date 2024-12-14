@@ -1,5 +1,6 @@
 package com.example.safeentry;
 
+import android.content.Intent;
 import android.os.Bundle;
 
 import android.view.View;
@@ -91,6 +92,8 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    public static final int REQUEST_CODE_MENU = 101;
+
     Spinner citySpinner;
     Spinner districtSpinner;
 
@@ -153,12 +156,17 @@ public class MainActivity extends AppCompatActivity {
                     @Override
                     public void run() {
                         try {
-                            StringBuilder urlBuilder = new StringBuilder("https://apis.data.go.kr/B552657/ErmctInfoInqireService/getEmrrmRltmUsefulSckbdInfoInqire");
+                            StringBuilder urlBuilder = new StringBuilder(
+                                    "https://apis.data.go.kr/B552657/ErmctInfoInqireService/getEmrrmRltmUsefulSckbdInfoInqire");
                             urlBuilder.append("?" + URLEncoder.encode("serviceKey", "UTF-8") + "=" + apiKey); /*Service Key*/
-                            urlBuilder.append("&" + URLEncoder.encode("STAGE1", "UTF-8") + "=" + URLEncoder.encode(citySpinner.getSelectedItem().toString(), "UTF-8")); /*주소(시도)*/
-                            urlBuilder.append("&" + URLEncoder.encode("STAGE2", "UTF-8") + "=" + URLEncoder.encode(districtSpinner.getSelectedItem().toString(), "UTF-8")); /*주소(시군구)*/
-                            urlBuilder.append("&" + URLEncoder.encode("pageNo", "UTF-8") + "=" + URLEncoder.encode("1", "UTF-8")); /*페이지 번호*/
-                            urlBuilder.append("&" + URLEncoder.encode("numOfRows", "UTF-8") + "=" + URLEncoder.encode("10", "UTF-8")); /*목록 건수*/
+                            urlBuilder.append("&" + URLEncoder.encode("STAGE1", "UTF-8") + "=" +
+                                    URLEncoder.encode(citySpinner.getSelectedItem().toString(), "UTF-8")); /*주소(시도)*/
+                            urlBuilder.append("&" + URLEncoder.encode("STAGE2", "UTF-8") + "=" +
+                                    URLEncoder.encode(districtSpinner.getSelectedItem().toString(), "UTF-8")); /*주소(시군구)*/
+                            urlBuilder.append("&" + URLEncoder.encode("pageNo", "UTF-8") + "=" +
+                                    URLEncoder.encode("1", "UTF-8")); /*페이지 번호*/
+                            urlBuilder.append("&" + URLEncoder.encode("numOfRows", "UTF-8") + "=" +
+                                    URLEncoder.encode("10", "UTF-8")); /*목록 건수*/
 
                             URL url = new URL(urlBuilder.toString());
                             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
@@ -177,6 +185,7 @@ public class MainActivity extends AppCompatActivity {
                             while ((line = rd.readLine()) != null) {
                                 sb.append(line);
                             }
+                            String xmlDataString = sb.toString();
                             rd.close();
                             conn.disconnect();
 
@@ -188,6 +197,13 @@ public class MainActivity extends AppCompatActivity {
                                     Toast.makeText(MainActivity.this, sb.toString(), Toast.LENGTH_SHORT).show();
                                 }
                             });
+
+                            Intent intent = new Intent(getApplicationContext(), DataActivity.class);
+                            intent.putExtra("city", citySpinner.getSelectedItem().toString());
+                            intent.putExtra("district", districtSpinner.getSelectedItem().toString());
+                            intent.putExtra("apiKey", apiKey);
+                            intent.putExtra("xmlDataString", xmlDataString);
+                            startActivityForResult(intent, REQUEST_CODE_MENU);
 
                         } catch (UnsupportedEncodingException e) {
                             e.printStackTrace();
